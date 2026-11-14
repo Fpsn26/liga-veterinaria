@@ -1,3 +1,5 @@
+import { attachmentJson } from '../services/attachment-service.js';
+
 export function createAttendanceRepository(pool, timeZone) {
   return {
     async read(studentId = null) {
@@ -9,6 +11,7 @@ export function createAttendanceRepository(pool, timeZone) {
             'date', to_char(m.meeting_date, 'YYYY-MM-DD'), 'time', to_char(m.meeting_time, 'HH24:MI'),
             'activity', m.activity, 'meetingStatus', m.status, 'attendanceCompleted', m.attendance_completed,
             'included', p.student_id IS NOT NULL, 'status', a.status, 'justification', a.justification,
+            'attachments', ${attachmentJson('s.id', 'm.id')},
             'countsTowardTotal', m.status = 'held' AND m.attendance_completed
               AND m.meeting_date + m.meeting_time <= CURRENT_TIMESTAMP AT TIME ZONE $2
               AND (s.status = 'active' OR p.student_id IS NOT NULL)

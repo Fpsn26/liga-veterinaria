@@ -1,6 +1,7 @@
 import { createApp } from '../src/app.js';
 import { loadAuthConfig } from '../src/config/auth.js';
 import { createDatabasePool } from '../src/config/database.js';
+import { sendError } from '../src/http/errors.js';
 
 // Uma inicialização por instância quente; falhas podem ser tentadas novamente.
 export function createVercelHandler(initialize) {
@@ -13,10 +14,7 @@ export function createVercelHandler(initialize) {
     } catch {
       ready = undefined;
       if (res.headersSent) { res.destroy(); return; }
-      res.setHeader('Cache-Control', 'no-store');
-      res.statusCode = 503;
-      res.setHeader('Content-Type', 'application/json; charset=utf-8');
-      res.end(JSON.stringify({ error: 'Serviço temporariamente indisponível.' }));
+      return sendError(req, res, 503, 'Serviço temporariamente indisponível.');
     }
   };
 }

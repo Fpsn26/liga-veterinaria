@@ -32,7 +32,7 @@ function recordsFromDraft() {
 }
 
 function hasUnsavedChanges() {
-  return recordsFromDraft().some((record, index) => record.status !== draftRows[index].originalStatus
+  return draftRows.some(row => row.pendingFiles?.length || row.removedAttachments?.size) || recordsFromDraft().some((record, index) => record.status !== draftRows[index].originalStatus
     || record.justification !== draftRows[index].originalJustification);
 }
 
@@ -45,6 +45,8 @@ function updateControls() {
   for (const row of draftRows) {
     row.select.disabled = locked || currentMeeting?.status !== 'held';
     row.justification.disabled = locked || currentMeeting?.status !== 'held';
+    if (row.fileInput) row.fileInput.disabled = locked || row.select.disabled;
+    for (const button of row.attachmentButtons ?? []) button.disabled = locked;
   }
 }
 
@@ -146,9 +148,43 @@ async function loadDetail(id) {
       block.className = 'record-justification';
       block.hidden = select.value !== 'absent';
       block.append(justification);
+      const draft = { pendingFiles: [], removedAttachments: new Set(), attachmentButtons: [] };
+      const files = document.createElement('div');
+      files.className = 'attachment-list';
+      for (const attachment of student.attachments ?? []) {
+        const item = document.createElement('div');
+        item.className = 'attachment-item';
+        const link = document.createElement('a');
+        link.href = `/api/attachments/${attachment.id}/download`;
+        link.textContent = attachment.name;
+        const remove = document.createElement('button');
+        remove.type = 'button'; remove.textContent = 'Remover anexo';
+        remove.addEventListener('click', () => {
+          if (busy || loadingDetail) return;
+          if (draft.removedAttachments.has(attachment.id)) {
+            draft.removedAttachments.delete(attachment.id); remove.textContent = 'Remover anexo';
+          } else { draft.removedAttachments.add(attachment.id); remove.textContent = 'Desfazer remoção'; }
+        });
+        draft.attachmentButtons.push(remove);
+        item.append(link, remove); files.append(item);
+      }
+      const input = document.createElement('input');
+      input.type = 'file'; input.multiple = true; input.accept = '.pdf,.jpg,.jpeg,.png';
+      input.className = 'attachment-upload-input';
+      input.setAttribute('aria-label', `Anexar atestado de ${student.name}`);
+      const hint = document.createElement('p'); hint.className = 'attachment-hint';
+      hint.textContent = 'PDF, JPG ou PNG, até 4 MB por arquivo. Os anexos serão enviados ao salvar a chamada.';
+      input.addEventListener('change', () => {
+        const selected = Array.from(input.files ?? []);
+        if (selected.some(file => !file.size || file.size > 4194304 || !/\.(pdf|jpe?g|png)$/i.test(file.name))) {
+          message.textContent = 'Escolha PDF, JPG ou PNG de até 4 MB por arquivo.'; input.value = ''; return;
+        }
+        draft.pendingFiles = selected;
+      });
+      block.append(files, input, hint);
       select.addEventListener('change', () => { block.hidden = select.value !== 'absent'; });
-      draftRows.push({ id: student.id, select, justification, originalStatus: student.status ?? null,
-        originalJustification: student.justification?.trim() || null });
+      draftRows.push(Object.assign(draft, { fileInput: input, id: student.id, select, justification, originalStatus: student.status ?? null,
+        originalJustification: student.justification?.trim() || null }));
       row.append(name, controls, block);
       attendanceList.append(row);
     }
@@ -177,6 +213,7 @@ async function saveAttendance(complete) {
   busy = true;
   updateControls();
   let committed = false;
+  let attachmentsSaved = false;
   try {
     const result = await api(`/${id}/attendance`, 'PUT', { records, complete, ...(complete ? { confirmed: true } : {}) });
     committed = true;
@@ -186,12 +223,36 @@ async function saveAttendance(complete) {
       draftRows[index].originalJustification = record.justification;
       draftRows[index].justification.value = record.justification ?? '';
     });
+    for (const row of draftRows) {
+      if (row.select.value !== 'absent') { row.pendingFiles = []; row.removedAttachments.clear(); continue; }
+      for (const attachmentId of row.removedAttachments) {
+        await attachmentRequest(`/${attachmentId}`, 'DELETE'); row.removedAttachments.delete(attachmentId);
+      }
+      while (row.pendingFiles.length) {
+        await attachmentRequest(`/${id}/${row.id}`, 'POST', row.pendingFiles[0]); row.pendingFiles.shift();
+      }
+      row.fileInput.value = '';
+    }
+    attachmentsSaved = true;
     await loadMeetings();
     await loadDetail(id);
     message.textContent = success;
   } catch (error) {
-    message.textContent = committed ? `${success} Não foi possível atualizar a tela; recarregue para conferir.` : error.message;
+    message.textContent = committed ? attachmentsSaved
+      ? `${success} Não foi possível atualizar a tela; recarregue para conferir.`
+      : `${success} Há anexos pendentes: ${error.message} Tente salvar novamente antes de sair.` : error.message;
   } finally { busy = false; updateControls(); }
+}
+
+async function attachmentRequest(path, method, file) {
+  const tokenResponse = await fetch('/api/auth/csrf');
+  if (!tokenResponse.ok) throw new Error('Entre novamente.');
+  const headers = { 'X-CSRF-Token': (await tokenResponse.json()).csrfToken };
+  if (file) { headers['Content-Type'] = file.type || 'application/octet-stream'; headers['X-File-Name'] = encodeURIComponent(file.name); }
+  const response = await fetch(`/api/attachments${path}`, { method, headers, body: file });
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.error || 'Não foi possível salvar o anexo.');
+  return data;
 }
 
 form.addEventListener('submit', event => {

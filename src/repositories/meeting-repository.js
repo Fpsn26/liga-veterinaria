@@ -1,4 +1,5 @@
 import { MeetingError } from '../services/meeting-service.js';
+import { attachmentJson } from '../services/attachment-service.js';
 
 const fields = `id::text AS id, number::text AS number, to_char(meeting_date, 'YYYY-MM-DD') AS date,
   to_char(meeting_time, 'HH24:MI') AS time, activity, status, attendance_completed AS "attendanceCompleted"`;
@@ -39,7 +40,8 @@ export function createMeetingRepository(pool, timeZone) {
       const meeting = (await pool.query(`SELECT ${fields} FROM meetings WHERE id = $1`, [id])).rows[0];
       if (!meeting) throw new MeetingError(404, 'Reunião não encontrada.');
       const participants = (await pool.query(`SELECT s.id::text AS id, s.name,
-        s.registration_number AS "registrationNumber", s.status AS "studentStatus", a.status, a.justification
+        s.registration_number AS "registrationNumber", s.status AS "studentStatus", a.status, a.justification,
+        ${attachmentJson('s.id', 'p.meeting_id')} AS attachments
         FROM meeting_participants p JOIN students s ON s.id = p.student_id
         LEFT JOIN attendance a ON a.student_id = p.student_id AND a.meeting_id = p.meeting_id
         WHERE p.meeting_id = $1 ORDER BY s.name, s.id`, [id])).rows;

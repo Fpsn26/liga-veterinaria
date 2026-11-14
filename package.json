@@ -20,11 +20,13 @@
     "test:password-reset": "npm run test:password-change",
     "test:system": "node tests/system.test.js",
     "test:production": "node tests/production.test.js",
-    "test": "npm run test:db && npm run test:auth && npm run test:students && npm run test:meetings && npm run test:attendance && npm run test:password-change && npm run test:system && npm run test:production && npm run test:vercel && npm run test:navigation",
+    "test": "npm run test:db && npm run test:auth && npm run test:students && npm run test:meetings && npm run test:attendance && npm run test:password-change && npm run test:system && npm run test:production && npm run test:vercel && npm run test:navigation && npm run test:attachments",
     "check:publish": "node --env-file-if-exists=.env scripts/check-publication.js",
     "test:vercel": "node tests/vercel.test.js",
     "test:password-change": "node tests/password-change.test.js && node tests/password-change-ui.test.js",
-    "test:navigation": "node tests/navigation.test.js"
+    "test:navigation": "node tests/navigation.test.js",
+    "storage:cleanup": "node --env-file=.env scripts/storage-cleanup.js",
+    "test:attachments": "node tests/attachments.test.js"
   },
   "dependencies": {
     "argon2": "^0.45.2",

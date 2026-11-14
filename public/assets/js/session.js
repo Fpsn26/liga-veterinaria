@@ -52,7 +52,13 @@ function renderHistory({ student, summary }, admin = false) {
     cell(row, meeting.number);
     cell(row, meeting.activity);
     cell(row, statusLabel(meeting));
-    cell(row, meeting.justification ?? '—');
+    const justificationCell = cell(row, meeting.justification ?? '—');
+    for (const attachment of meeting.attachments ?? []) {
+      const link = document.createElement('a');
+      link.href = `/api/attachments/${attachment.id}/download`;
+      link.textContent = ` Baixar ${attachment.name}`;
+      justificationCell.append(link);
+    }
     cell(row, meeting.countsTowardTotal ? 'Sim' : 'Não');
     rows.append(row);
   }

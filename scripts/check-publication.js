@@ -20,7 +20,7 @@ try {
     { cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).split('\0').filter(Boolean);
   const staged = new Set(execFileSync('git', [...prefix, 'ls-files', '--cached', '-z'],
     { cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).split('\0').filter(Boolean));
-  const values = ['ADMIN_PASSWORD', 'SESSION_SECRET', 'RESEND_API_KEY', 'DATABASE_URL']
+  const values = ['ADMIN_PASSWORD', 'SESSION_SECRET', 'RESEND_API_KEY', 'DATABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY']
     .map(key => process.env[key]).filter(value => value && value.length >= 6);
   try {
     const password = decodeURIComponent(new URL(process.env.DATABASE_URL).password);
@@ -41,7 +41,7 @@ try {
       const content = buffer.toString('utf8');
       if (values.some(value => buffer.includes(Buffer.from(value)))) findings.push({ file, issue: `valor de segredo do ambiente encontrado (${source})` });
       if (/-----BEGIN (?:[A-Z ]+ )?PRIVATE KEY-----/.test(content)) findings.push({ file, issue: `chave privada encontrada (${source})` });
-      if (/\b(?:gh[pousr]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{30,}|AKIA[A-Z0-9]{16}|re_[A-Za-z0-9_-]{20,})\b/.test(content)) {
+      if (/\b(?:gh[pousr]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{30,}|AKIA[A-Z0-9]{16}|re_[A-Za-z0-9_-]{20,}|sb_secret_[A-Za-z0-9_-]{20,})\b/.test(content)) {
         findings.push({ file, issue: `possível token de serviço encontrado (${source})` });
       }
       if (file !== '.env.example' && /postgres(?:ql)?:\/\/[^\s:"']+:[^\s@"']+@/i.test(content)) {

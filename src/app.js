@@ -3,6 +3,10 @@ import session from 'express-session';
 import connectPgSimple from 'connect-pg-simple';
 import { fileURLToPath } from 'node:url';
 import { readFile } from 'node:fs/promises';
+import { sendError } from './http/errors.js';
+import { createPrivateStorage } from './services/private-storage.js';
+import { createAttachmentService } from './services/attachment-service.js';
+import { createAttachmentRouter } from './routes/attachments.js';
 import { createAuthRepository } from './repositories/auth-repository.js';
 import { createAuthService } from './services/auth-service.js';
 import { createAuthRouter } from './routes/auth.js';
@@ -20,13 +24,14 @@ export function createSessionStore(pool) {
     errorLog: () => console.error('Falha na manutenção das sessões.') });
 }
 
-export function createApp({ config, pool, store = createSessionStore(pool), loginLimit, changeLimit }) {
+export function createApp({ config, pool, store = createSessionStore(pool), loginLimit, changeLimit, storage = createPrivateStorage() }) {
   const app = express();
   // HTML fica fora da pasta pública: CDNs não podem contornar os guards.
   const directory = fileURLToPath(new URL('../views/', import.meta.url));
   const assetsDirectory = fileURLToPath(new URL('../public/assets/', import.meta.url));
   const service = createAuthService(config, createAuthRepository(pool));
   const changeService = createPasswordChangeService(config, createAuthRepository(pool), createPasswordChangeRepository(pool));
+  const attachments = createAttachmentService(pool, storage);
   app.disable('x-powered-by');
   app.set('trust proxy', config.trustProxy ?? false);
   app.use((req, res, next) => {
@@ -57,12 +62,13 @@ export function createApp({ config, pool, store = createSessionStore(pool), logi
   });
   app.use('/api/auth', createAuthRouter(service, config, { loginLimit }));
   app.use('/api/password-change', createPasswordChangeRouter(changeService, config, { changeLimit }));
+  app.use('/api/attachments', createAttachmentRouter(attachments, config));
   app.use('/api/admin', requirePermission('students:edit'));
   app.use('/api/admin/students', createStudentRouter(pool, config));
-  app.use('/api/admin/meetings', createMeetingRouter(pool, config));
+  app.use('/api/admin/meetings', createMeetingRouter(pool, config, attachments));
   app.use('/api/admin/attendance', createAttendanceRouter(pool, config, { admin: true }));
   app.use('/api/attendance', createAttendanceRouter(pool, config));
-  app.use('/api', (req, res) => res.status(404).json({ error: 'Rota não encontrada.' }));
+  app.use('/api', (req, res) => sendError(req, res, 404, 'Rota não encontrada.'));
   // Só estas páginas são servidas. Nenhum diretório público pode contornar os guards.
   app.get('/favicon.ico', (req, res) => res.redirect(302, '/assets/images/favicon.png'));
   app.get(['/', '/index.html'], async (req, res) => {
@@ -82,11 +88,11 @@ export function createApp({ config, pool, store = createSessionStore(pool), logi
   app.get('/pages/cadastro.html', requirePermission('students:add'), (req, res) => res.sendFile('pages/cadastro.html', { root: directory }));
   app.get('/pages/reunioes.html', requirePermission('meetings:register'), (req, res) => res.sendFile('pages/reunioes.html', { root: directory }));
   app.use('/assets', express.static(assetsDirectory, { dotfiles: 'deny', index: false }));
-  app.use((req, res) => res.status(404).json({ error: 'Rota não encontrada.' }));
+  app.use((req, res) => sendError(req, res, 404, 'Rota não encontrada.'));
   app.use((error, req, res, next) => {
     if (res.headersSent) return next(error);
-    const status = error.type === 'entity.parse.failed' ? 400 : error.type === 'entity.too.large' ? 413 : 503;
-    res.status(status).json({ error: status === 503 ? 'Serviço temporariamente indisponível.' : 'Corpo da requisição inválido.' });
+    const status = error.type === 'entity.parse.failed' ? 400 : error.type === 'entity.too.large' ? 413 : error.status === 500 ? 500 : 503;
+    sendError(req, res, status, status === 503 ? 'Serviço temporariamente indisponível.' : status === 500 ? 'Ocorreu um erro.' : status === 413 ? 'Solicitação muito grande. Anexos devem ter até 4 MB por arquivo.' : 'Corpo da requisição inválido.');
   });
   return app;
 }

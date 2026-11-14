@@ -76,3 +76,24 @@ Os limites por IP de login/troca de senha ainda são locais por instância. Ante
 Revisar no Supabase a exposição do schema público à Data API e os privilégios de anon/authenticated; este aplicativo acessa o banco somente pelo servidor. A identidade do responsável, base legal, retenção e aviso de privacidade ainda exigem definição. Nenhum deploy, envio ao GitHub ou alteração de dados reais é realizado por estes arquivos.
 
 Referências: [funções e arquivos incluídos na Vercel](https://vercel.com/docs/project-configuration/vercel-json), [cabeçalhos fornecidos pela Vercel](https://vercel.com/docs/headers/request-headers), [conexões PostgreSQL no Supabase](https://supabase.com/docs/guides/database/connecting-to-postgres).
+
+### Anexos de justificativas
+
+Atestados podem conter dados pessoais sensíveis. São guardados no Supabase Storage privado, nunca na pasta pública nem no repositório. Apenas o Admin envia/remove; o aluno baixa somente seus próprios documentos após autenticação. Tipos aceitos: PDF, JPG/JPEG e PNG, até 4 MiB por arquivo. A justificativa não abona a falta.
+
+Para habilitar em produção:
+
+1. Execute `npm run db:migrate` para aplicar também `007_attendance_attachments.sql` (não altere migrações anteriores).
+2. No Supabase, crie em **Storage** um bucket chamado `justificativas`, com **Public bucket desativado**, limite de 4 MB e tipos `application/pdf`, `image/jpeg`, `image/png`. Não crie políticas públicas de leitura ou escrita.
+3. Configure no `.env` local e nas variáveis **Production** da Vercel: `SUPABASE_URL` (URL HTTPS do projeto, sem barra final), `SUPABASE_SERVICE_ROLE_KEY` (chave privada de servidor) e `SUPABASE_ATTACHMENTS_BUCKET=justificativas`. Nunca use prefixos públicos para essa chave nem a envie ao navegador/GitHub. Faça redeploy após salvar.
+4. Confira o envio, download do próprio aluno e a recusa de acesso por outra conta, usando documentos fictícios.
+
+O servidor verifica o caráter privado do bucket antes das operações. Downloads passam pelo servidor autenticado e são entregues como arquivo, sem URL pública. Extensão, tipo, assinatura, tamanho e integridade são verificados; isso não é uma varredura antivírus. A função na Vercel recebe bytes diretamente, sem a sobrecarga de base64.
+
+As tabelas de anexos ficam no schema `lahvet_private`, fora da API pública do Supabase, com RLS e sem permissões para PUBLIC. Use uma conexão PostgreSQL de servidor autorizada a esse schema (a conexão de proprietário usada nas migrações já possui acesso). Não exponha esse schema na Data API.
+
+Os arquivos selecionados e as remoções são processados pelo botão **Salvar chamada**, ou ao fechá-la. Se a chamada salvar e um envio falhar, a tela informa os anexos pendentes e preserva a seleção para tentar novamente. Ao mudar uma falta para presença/pendência, o acesso ao anexo é revogado no banco. A remoção física usa uma fila persistente: erros do Storage não desfazem a correção da chamada. Ela é processada em novos salvamentos/remoções; execute também `npm run storage:cleanup` periodicamente e após falhas do provedor para esvaziar a fila. Esse comando remove somente objetos cuja exclusão já foi registrada; não aplica prazo de guarda.
+
+**Prazo de guarda dos atestados: pendente de definição pela liga.** Nenhuma expiração automática foi presumida. A definição e divulgação dessa regra precisam ocorrer antes do uso com documentos reais. Não troque o nome do bucket enquanto houver anexos ou remoções pendentes.
+
+Páginas HTML de erro usam a identidade da LAHVET, mantêm o código HTTP e apresentam caminhos para entrar, voltar ao início ou tentar novamente. APIs continuam respondendo JSON, sem detalhes internos.

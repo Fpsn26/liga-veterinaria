@@ -4,9 +4,17 @@ import { csrfProtection } from './auth.js';
 import { createMeetingService, MeetingError } from '../services/meeting-service.js';
 import { createMeetingRepository } from '../repositories/meeting-repository.js';
 
-export function createMeetingRouter(pool, config) {
+export function createMeetingRouter(pool, config, attachments) {
   const router = Router();
   const service = createMeetingService(createMeetingRepository(pool, config.timeZone));
+  for (const action of ['attendance', 'saveAttendance']) {
+    const original = service[action];
+    service[action] = async (...args) => {
+      const result = await original(...args);
+      try { await attachments?.cleanup(); } catch { console.error('Limpeza de anexos pendente.'); }
+      return result;
+    };
+  }
   const csrf = csrfProtection(config.origin);
   router.get('/', requirePermission('attendance:read_all'), async (req, res) => res.json(await service.list()));
   router.get('/:id', requirePermission('attendance:read_all'), async (req, res) => res.json(await service.get(req.params.id)));

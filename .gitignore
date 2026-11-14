@@ -24,6 +24,7 @@
 /scripts/*
 !/scripts/check-production.js
 !/scripts/check-publication.js
+!/scripts/storage-cleanup.js
 /certs/*
 !/certs/supabase-ca.crt
 
