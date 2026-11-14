@@ -14,6 +14,8 @@ export function createMeetingRouter(pool, config) {
   router.post('/:id/start', requirePermission('attendance:write'), csrf, async (req, res) => res.json(await service.start(req.params.id, req.body)));
   router.post('/:id/cancel', requirePermission('meetings:register'), csrf, async (req, res) => res.json(await service.cancel(req.params.id, req.body)));
   router.post('/:id/complete', requirePermission('attendance:write'), csrf, async (req, res) => res.json(await service.complete(req.params.id, req.body)));
+  router.put('/:id/attendance', requirePermission('attendance:write'), csrf,
+    async (req, res) => res.json(await service.saveAttendance(req.params.id, req.body)));
   router.put('/:id/attendance/:studentId', requirePermission('attendance:write'), csrf,
     async (req, res) => res.json(await service.attendance(req.params.id, req.params.studentId, req.body)));
   router.put('/:id/justification/:studentId', requirePermission('attendance:justify'), csrf,

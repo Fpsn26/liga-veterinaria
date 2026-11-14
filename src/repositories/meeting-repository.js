@@ -77,6 +77,32 @@ export function createMeetingRepository(pool, timeZone) {
         return { saved: true };
       });
     },
+    saveAttendance(id, records, complete) {
+      return transaction(async client => {
+        const meeting = await lockedMeeting(client, id);
+        requireHeld(meeting);
+        const participants = (await client.query('SELECT student_id::text AS id FROM meeting_participants WHERE meeting_id = $1', [id])).rows;
+        const expected = new Set(participants.map(participant => participant.id));
+        if (records.some(record => !expected.has(record.studentId))) throw new MeetingError(404, 'Aluno não pertence à chamada desta reunião.');
+        if (!participants.length || records.length !== participants.length) throw new MeetingError(409, 'Envie todos os participantes da chamada. Reabra a reunião e tente novamente.');
+        if ((complete || meeting.attendanceCompleted) && records.some(record => record.status === null)) {
+          throw new MeetingError(409, 'Marque Presente ou Falta para todos os participantes antes de fechar a chamada.');
+        }
+        const data = JSON.stringify(records);
+        // Pendência continua sendo ausência de registro, sem falta automática.
+        await client.query(`DELETE FROM attendance a USING
+          jsonb_to_recordset($2::jsonb) AS r("studentId" bigint, status text, justification text)
+          WHERE a.meeting_id = $1 AND a.student_id = r."studentId" AND r.status IS NULL`, [id, data]);
+        await client.query(`INSERT INTO attendance (student_id, meeting_id, status, justification)
+          SELECT r."studentId", $1::bigint, r.status, r.justification
+          FROM jsonb_to_recordset($2::jsonb) AS r("studentId" bigint, status text, justification text)
+          WHERE r.status IS NOT NULL
+          ON CONFLICT (student_id, meeting_id) DO UPDATE SET status = EXCLUDED.status, justification = EXCLUDED.justification`, [id, data]);
+        const result = await client.query(`UPDATE meetings SET attendance_completed = attendance_completed OR $2
+          WHERE id = $1 RETURNING ${fields}`, [id, complete]);
+        return { saved: true, meeting: result.rows[0] };
+      });
+    },
     justify(id, studentId, justification) {
       return transaction(async (client) => {
         requireHeld(await lockedMeeting(client, id));

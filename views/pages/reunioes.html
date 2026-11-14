@@ -19,7 +19,7 @@
         <p class="form-field"><label for="activity">Atividade</label><input id="activity" name="activity" maxlength="500" required></p>
         <p>O número da reunião é fixo e gerado automaticamente. Os horários seguem o fuso configurado no servidor.</p>
         <div class="form-actions">
-          <button id="register-meeting" type="submit">Registrar reunião</button>
+          <button id="register-meeting" type="submit" disabled>Registrar reunião</button>
         </div>
       </form>
       <p id="meeting-message" role="status" aria-live="polite"></p>
@@ -32,7 +32,11 @@
         <button id="cancel-meeting" type="button">Cancelar reunião</button>
         <p>Preencha cada presença ou falta explicitamente. Justificar uma falta não a abona. Mudar uma falta para presença remove a justificativa.</p>
         <div id="attendance-list"></div>
-        <button id="complete-meeting" type="button">Concluir chamada</button>
+        <p>Salvar chamada mantém as marcações em aberto. Fechar chamada salva e conclui; somente chamadas concluídas entram nos percentuais. Correções em chamadas já fechadas são aplicadas ao salvar.</p>
+        <div class="record-actions">
+          <button id="save-attendance" type="button" hidden>Salvar chamada</button>
+          <button id="complete-meeting" type="button" hidden>Fechar chamada</button>
+        </div>
       </section>
     </main>
   </body>

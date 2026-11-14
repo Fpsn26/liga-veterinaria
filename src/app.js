@@ -35,7 +35,13 @@ export function createApp({ config, pool, store = createSessionStore(pool), logi
     if (req.path === '/' || req.path === '/index.html' || req.path.startsWith('/api/') || req.path.startsWith('/pages/')) res.set('Cache-Control', 'no-store');
     next();
   });
-  app.use(express.json({ limit: '10kb' }));
+  const json = express.json({ limit: '10kb' });
+  const attendanceJson = express.json({ limit: '1mb' });
+  app.use((req, res, next) => {
+    // A chamada inteira pode conter várias justificativas; demais rotas mantêm 10 KB.
+    const bulk = req.method === 'PUT' && /^\/api\/admin\/meetings\/[1-9]\d{0,18}\/attendance\/?$/.test(req.path);
+    return (bulk ? attendanceJson : json)(req, res, next);
+  });
   app.use(session({ name: 'lahvet.sid', secret: config.secret, store, resave: false, saveUninitialized: false,
     cookie: { httpOnly: true, secure: config.production, sameSite: 'strict', maxAge: 60 * 60 * 1000 } }));
   app.use(async (req, res, next) => {

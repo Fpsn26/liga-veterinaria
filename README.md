@@ -53,6 +53,12 @@ Na página inicial, visitantes veem apenas “Entrar”. Admin e Aluno autentica
 
 Cadastro é uma operação administrativa, sem autocadastro público. Criar um aluno mantém a sessão do Admin e não autentica automaticamente o aluno. O acesso direto ao cadastro continua bloqueado para visitantes/alunos. O Aluno acessa somente a própria frequência após fazer login.
 
+## Chamadas e frequência
+
+Na chamada, marque os participantes e use **Salvar chamada**, ao final da lista, para gravar todas as presenças, faltas e justificativas de uma vez. **Fechar chamada**, ao lado, salva as marcações atuais e conclui a chamada; todos precisam estar como Presente ou Falta. Não há salvamento individual por aluno.
+
+Salvar um rascunho mantém a chamada aberta. Apenas reuniões realizadas com chamada fechada entram nos percentuais. Correções posteriores são aplicadas pelo mesmo botão Salvar chamada e mantêm o fechamento. Justificativas não abonam faltas. O painel revalida os dados ao retornar pelo histórico do navegador.
+
 ## Troca de senha
 
 No login, “Trocar senha” abre diretamente o formulário. Para salvar, o aluno informa matrícula ou email institucional, senha atual, nova senha e confirmação. A nova senha exige de 8 a 1024 caracteres, uma letra maiúscula e um número ou caractere especial. A troca não faz login automaticamente e invalida as sessões antigas na próxima requisição.

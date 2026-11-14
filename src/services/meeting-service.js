@@ -46,6 +46,30 @@ export function createMeetingService(repository) {
     start(id, body) { meetingId(id); confirmed(body); return repository.start(id); },
     cancel(id, body) { meetingId(id); confirmed(body); return repository.cancel(id); },
     complete(id, body) { meetingId(id); confirmed(body); return repository.complete(id); },
+    saveAttendance(id, body) {
+      meetingId(id);
+      bodyFields(body, ['records', 'complete', 'confirmed']);
+      if (typeof body.complete !== 'boolean' || (body.complete && body.confirmed !== true)
+        || !Array.isArray(body.records) || !body.records.length || body.records.length > 1000) {
+        throw new MeetingError(400, 'Envie os participantes da chamada e confirme sua conclusão quando necessário.');
+      }
+      const ids = new Set();
+      const records = body.records.map(record => {
+        bodyFields(record, ['studentId', 'status', 'justification']);
+        if (typeof record.studentId !== 'string') throw new MeetingError(400, 'Identificador de aluno inválido.');
+        meetingId(record.studentId);
+        if (ids.has(record.studentId)) throw new MeetingError(400, 'Aluno repetido na chamada.');
+        ids.add(record.studentId);
+        if (![null, 'present', 'absent'].includes(record.status)) throw new MeetingError(400, 'Informe presença, falta ou pendência.');
+        const text = record.justification;
+        if (text !== undefined && text !== null && (typeof text !== 'string' || !text.trim() || text.trim().length > 2000)) {
+          throw new MeetingError(400, 'Informe justificativa válida de até 2000 caracteres ou null para removê-la.');
+        }
+        if (text != null && record.status !== 'absent') throw new MeetingError(400, 'Somente faltas podem ter justificativa.');
+        return { studentId: record.studentId, status: record.status, justification: text?.trim() ?? null };
+      });
+      return repository.saveAttendance(id, records, body.complete);
+    },
     attendance(id, studentId, body) {
       meetingId(id); meetingId(studentId);
       bodyFields(body, ['status']);

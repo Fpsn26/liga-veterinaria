@@ -15,7 +15,7 @@
     "test:db": "node tests/database.test.js",
     "test:auth": "node tests/auth.test.js",
     "test:students": "node tests/students.test.js && node tests/students-ui.test.js",
-    "test:meetings": "node tests/meetings.test.js && node tests/meetings-ui.test.js",
+    "test:meetings": "node tests/meetings.test.js && node tests/meeting-bulk.test.js && node tests/meetings-ui.test.js",
     "test:attendance": "node tests/attendance.test.js && node tests/attendance-ui.test.js",
     "test:password-reset": "npm run test:password-change",
     "test:system": "node tests/system.test.js",
