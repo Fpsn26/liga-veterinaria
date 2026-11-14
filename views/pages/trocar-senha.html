@@ -6,22 +6,27 @@
     <link rel="icon" type="image/png" sizes="32x32" href="/assets/images/favicon.png">
     <title>Trocar senha | LAHVET</title>
     <link rel="stylesheet" href="/assets/css/style.css">
-    <script src="/assets/js/password-reset.js" defer></script>
+    <script src="/assets/js/password-change.js" defer></script>
     <script src="/assets/js/password-visibility.js" defer></script>
   </head>
   <body>
     <main>
       <a class="back-link" href="/pages/login.html">Voltar ao login</a>
       <h1>Trocar senha</h1>
+      <p>Informe sua matrícula ou email institucional e sua senha atual. Se esqueceu a senha, procure a direção da liga.</p>
       <p id="password-help">Use de 8 a 1024 caracteres, pelo menos uma letra maiúscula e um número ou caractere especial.</p>
-      <form id="password-reset-form" class="entry-form entry-form--login" data-action="confirm">
+      <form id="password-change-form" class="entry-form entry-form--login">
+        <p class="form-field"><label for="identifier">Email institucional ou matrícula</label>
+          <input id="identifier" name="identifier" autocomplete="username" required maxlength="254"></p>
+        <p class="form-field"><label for="currentPassword">Senha atual</label>
+          <input id="currentPassword" name="currentPassword" type="password" autocomplete="current-password" required maxlength="1024"></p>
         <p class="form-field"><label for="password">Nova senha</label>
           <input id="password" name="password" type="password" autocomplete="new-password" required minlength="8" maxlength="1024" aria-describedby="password-help"></p>
         <p class="form-field"><label for="confirmation">Confirmar nova senha</label>
           <input id="confirmation" name="confirmation" type="password" autocomplete="new-password" required minlength="8" maxlength="1024"></p>
         <div class="form-actions"><button type="submit">Trocar senha</button></div>
       </form>
-      <p id="reset-message" role="status" aria-live="polite"></p>
+      <p id="change-message" role="status" aria-live="polite"></p>
     </main>
   </body>
 </html>

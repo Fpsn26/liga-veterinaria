@@ -17,12 +17,14 @@
     "test:students": "node tests/students.test.js && node tests/students-ui.test.js",
     "test:meetings": "node tests/meetings.test.js && node tests/meetings-ui.test.js",
     "test:attendance": "node tests/attendance.test.js && node tests/attendance-ui.test.js",
-    "test:password-reset": "node tests/password-reset.test.js && node tests/password-reset-ui.test.js",
+    "test:password-reset": "npm run test:password-change",
     "test:system": "node tests/system.test.js",
     "test:production": "node tests/production.test.js",
-    "test": "npm run test:db && npm run test:auth && npm run test:students && npm run test:meetings && npm run test:attendance && npm run test:password-reset && npm run test:system && npm run test:production && npm run test:vercel",
+    "test": "npm run test:db && npm run test:auth && npm run test:students && npm run test:meetings && npm run test:attendance && npm run test:password-change && npm run test:system && npm run test:production && npm run test:vercel && npm run test:navigation",
     "check:publish": "node --env-file-if-exists=.env scripts/check-publication.js",
-    "test:vercel": "node tests/vercel.test.js"
+    "test:vercel": "node tests/vercel.test.js",
+    "test:password-change": "node tests/password-change.test.js && node tests/password-change-ui.test.js",
+    "test:navigation": "node tests/navigation.test.js"
   },
   "dependencies": {
     "argon2": "^0.45.2",

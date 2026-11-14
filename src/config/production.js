@@ -1,7 +1,6 @@
 import { loadAuthConfig } from './auth.js';
-import { createResetMailer } from '../services/reset-email.js';
 
-// Verifica configuração local sem abrir banco, enviar email ou exibir valores.
+// Verifica configuração local sem abrir banco ou exibir valores.
 // Não substitui a verificação da infraestrutura e a aprovação institucional.
 export async function checkProductionEnvironment(env, nodeVersion = process.versions.node) {
   const checks = [];
@@ -32,11 +31,6 @@ export async function checkProductionEnvironment(env, nodeVersion = process.vers
   await check('PORT inteiro entre 1 e 65535', () => {
     const value = env.PORT ?? '3000';
     return /^\d+$/.test(value) && Number(value) >= 1 && Number(value) <= 65535;
-  });
-  await check('RESEND_API_KEY preenchida e RESEND_FROM com formato válido', () => !!createResetMailer(env));
-  await check('RESEND_FROM fora do domínio de teste resend.dev', () => {
-    const from = env.RESEND_FROM?.trim() ?? '';
-    return !!createResetMailer(env) && !/@resend\.dev>?$/i.test(from);
   });
   await check('Verificação global de certificados TLS habilitada', () => env.NODE_TLS_REJECT_UNAUTHORIZED !== '0');
   return checks;
