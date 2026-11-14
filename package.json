@@ -1,0 +1,39 @@
+{
+  "name": "liga-veterinaria",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Site da Liga Acadêmica de Veterinária",
+  "type": "module",
+  "engines": {
+    "node": "22.x"
+  },
+  "scripts": {
+    "dev": "node --env-file=.env --watch src/server.js",
+    "start": "node --env-file=.env src/server.js",
+    "db:migrate": "node --env-file=.env database/migrate.js",
+    "check:production": "node --env-file=.env scripts/check-production.js",
+    "test:db": "node tests/database.test.js",
+    "test:auth": "node tests/auth.test.js",
+    "test:students": "node tests/students.test.js && node tests/students-ui.test.js",
+    "test:meetings": "node tests/meetings.test.js && node tests/meetings-ui.test.js",
+    "test:attendance": "node tests/attendance.test.js && node tests/attendance-ui.test.js",
+    "test:password-reset": "node tests/password-reset.test.js && node tests/password-reset-ui.test.js",
+    "test:system": "node tests/system.test.js",
+    "test:production": "node tests/production.test.js",
+    "test": "npm run test:db && npm run test:auth && npm run test:students && npm run test:meetings && npm run test:attendance && npm run test:password-reset && npm run test:system && npm run test:production && npm run test:vercel",
+    "check:publish": "node --env-file-if-exists=.env scripts/check-publication.js",
+    "test:vercel": "node tests/vercel.test.js"
+  },
+  "dependencies": {
+    "argon2": "^0.45.2",
+    "connect-pg-simple": "^10.0.0",
+    "express": "^5.1.0",
+    "express-rate-limit": "^8.7.3",
+    "express-session": "^1.19.0",
+    "pg": "^8.16.0"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "^0.5.15",
+    "supertest": "^7.3.2"
+  }
+}

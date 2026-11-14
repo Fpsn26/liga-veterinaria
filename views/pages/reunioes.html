@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/images/favicon.png">
+    <title>Reuniões e chamadas | LAHVET</title>
+    <link rel="stylesheet" href="/assets/css/style.css">
+    <script src="/assets/js/meetings.js" defer></script>
+  </head>
+  <body>
+    <main>
+      <a class="back-link" href="/pages/painel.html">Voltar ao painel</a>
+      <h1>Reuniões e chamadas</h1>
+      <form id="meeting-form" class="entry-form">
+        <h2>Registrar reunião</h2>
+        <p class="form-field"><label for="meeting-date">Data</label><input id="meeting-date" name="date" type="date" required></p>
+        <p class="form-field"><label for="meeting-time">Horário</label><input id="meeting-time" name="time" type="time" required></p>
+        <p class="form-field"><label for="activity">Atividade</label><input id="activity" name="activity" maxlength="500" required></p>
+        <p>O número da reunião é fixo e gerado automaticamente. Os horários seguem o fuso configurado no servidor.</p>
+        <div class="form-actions">
+          <button id="register-meeting" type="submit">Registrar reunião</button>
+        </div>
+      </form>
+      <p id="meeting-message" role="status" aria-live="polite"></p>
+      <h2>Reuniões registradas</h2>
+      <div id="meetings-list"></div>
+      <section id="meeting-detail" hidden aria-label="Chamada da reunião">
+        <h2 id="detail-title"></h2>
+        <p id="detail-state"></p>
+        <button id="start-meeting" type="button">Iniciar reunião e chamada</button>
+        <button id="cancel-meeting" type="button">Cancelar reunião</button>
+        <p>Preencha cada presença ou falta explicitamente. Justificar uma falta não a abona. Mudar uma falta para presença remove a justificativa.</p>
+        <div id="attendance-list"></div>
+        <button id="complete-meeting" type="button">Concluir chamada</button>
+      </section>
+    </main>
+  </body>
+</html>

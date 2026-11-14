@@ -1,0 +1,28 @@
+# Deploy contém somente o runtime e seus arquivos necessários.
+.env
+.env.*
+.git/
+.github/
+.vercel/
+.aws/
+.agents/
+.codex/
+node_modules/
+docs/
+tests/
+database/
+scripts/
+README.md
+coverage/
+dist/
+*.log
+*.dump
+*.bak
+**/.gitkeep
+**/*.key
+**/*.pem
+**/*.p12
+**/*.pfx
+# Somente este certificado público acompanha a função.
+certs/*
+!certs/supabase-ca.crt

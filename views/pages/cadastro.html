@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/images/favicon.png">
+    <title>Alunos | LAHVET</title>
+    <link rel="stylesheet" href="/assets/css/style.css">
+    <script src="/assets/js/students.js" defer></script>
+  </head>
+  <body>
+    <main>
+      <a class="back-link" href="/pages/painel.html">Voltar ao painel</a>
+      <h1>Alunos</h1>
+      <form id="student-form" class="entry-form">
+        <h2 id="form-title">Adicionar aluno</h2>
+        <p class="form-field"><label for="name">Nome completo</label><input id="name" name="name" required maxlength="200" autocomplete="name"></p>
+        <p class="form-field"><label for="registration">Matrícula</label><input id="registration" name="registrationNumber" required maxlength="64"></p>
+        <p class="form-field"><label for="email">Email institucional</label><input id="email" name="email" type="email" required maxlength="254" autocomplete="email"></p>
+        <p>Use um email de @alunos.unicerrado.edu.br. Novos alunos só podem ser adicionados antes do início das atividades.</p>
+        <div class="form-actions">
+          <button id="save-student" type="submit">Adicionar aluno</button>
+          <button id="cancel-edit" type="button" hidden>Cancelar edição</button>
+        </div>
+      </form>
+      <p id="student-message" role="status" aria-live="polite"></p>
+      <p id="initial-password" role="status"></p>
+      <h2>Alunos cadastrados</h2>
+      <p>O desligamento bloqueia o login e preserva o histórico.</p>
+      <div id="students-list"></div>
+    </main>
+  </body>
+</html>

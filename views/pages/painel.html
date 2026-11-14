@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/images/favicon.png">
+    <title>Frequência | LAHVET</title>
+    <link rel="stylesheet" href="/assets/css/style.css">
+    <script src="/assets/js/session.js" defer></script>
+  </head>
+  <body>
+    <main>
+      <a class="back-link" href="/">Voltar ao início</a>
+      <p class="eyebrow">LAHVET · Hematologia Veterinária</p>
+      <h1>Frequência</h1>
+      <p id="session-message" role="status">Consultando sessão…</p>
+      <nav class="page-nav" aria-label="Ações administrativas">
+        <a id="manage-students" href="/pages/cadastro.html" hidden>Adicionar ou editar aluno</a>
+        <a id="manage-meetings" href="/pages/reunioes.html" hidden>Reuniões e chamadas</a>
+      </nav>
+      <p id="attendance-message" role="status" aria-live="polite"></p>
+      <section id="admin-attendance" hidden aria-labelledby="admin-title">
+        <h2 id="admin-title">Frequência dos alunos</h2>
+        <form id="attendance-filters" class="filters">
+          <label>Nome<input name="name" maxlength="200" type="search"></label>
+          <label>Matrícula<input name="registrationNumber" maxlength="64" type="search"></label>
+          <label>Dia da reunião<input name="date" type="date"></label>
+          <button type="submit">Aplicar filtros</button>
+          <button id="clear-filters" type="button">Limpar</button>
+        </form>
+        <p>Filtros alteram somente a lista. Os totais e percentuais são gerais. O filtro por dia mostra os participantes daquela chamada.</p>
+        <p id="attendance-count"></p>
+        <div class="table-scroll" tabindex="0" role="region" aria-label="Tabela de frequência dos alunos">
+          <table class="attendance-table">
+            <thead><tr><th scope="col">Aluno</th><th scope="col">Matrícula</th><th scope="col">Situação</th><th scope="col">Reuniões</th><th scope="col">Presenças</th><th scope="col">Faltas</th><th scope="col">Presença %</th><th scope="col">Faltas %</th><th scope="col">Dia selecionado</th><th scope="col">Histórico</th></tr></thead>
+            <tbody id="attendance-rows"></tbody>
+          </table>
+        </div>
+      </section>
+      <section id="student-attendance" hidden aria-labelledby="student-title">
+        <h2 id="student-title">Minha frequência</h2>
+        <p id="attendance-identity"></p>
+        <p id="attendance-summary"></p>
+        <progress id="presence-progress" max="100" value="0" aria-label="Porcentagem de presença"></progress>
+        <p id="attendance-basis"></p>
+        <div class="table-scroll" tabindex="0" role="region" aria-label="Histórico de frequência">
+          <table class="history-table">
+            <thead><tr><th scope="col">Data</th><th scope="col">Reunião</th><th scope="col">Atividade</th><th scope="col">Presença/falta</th><th scope="col">Justificativa</th><th scope="col">No cálculo?</th></tr></thead>
+            <tbody id="history-rows"></tbody>
+          </table>
+        </div>
+      </section>
+      <button id="logout" type="button">Sair</button>
+    </main>
+  </body>
+</html>

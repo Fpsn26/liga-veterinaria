@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/images/favicon.png">
+    <title>Entrar | Liga Acadêmica de Veterinária</title>
+    <link rel="stylesheet" href="/assets/css/style.css">
+    <script src="/assets/js/login.js" defer></script>
+    <script src="/assets/js/password-visibility.js" defer></script>
+  </head>
+  <body>
+    <main>
+      <a class="back-link" href="/">Voltar ao início</a>
+      <h1>Entrar</h1>
+      <form id="login-form" class="entry-form entry-form--login">
+        <p class="form-field"><label for="identifier">Email ou matrícula</label>
+          <input id="identifier" name="identifier" autocomplete="username" required maxlength="254"></p>
+        <p class="form-field"><label for="password">Senha</label>
+          <input id="password" name="password" type="password" autocomplete="current-password" required maxlength="1024"></p>
+        <div class="form-actions">
+          <button type="submit" id="login-button">Logar</button>
+          <a href="/pages/recuperar-senha.html">Trocar senha</a>
+        </div>
+      </form>
+      <p id="login-message" role="status" aria-live="polite"></p>
+    </main>
+  </body>
+</html>
