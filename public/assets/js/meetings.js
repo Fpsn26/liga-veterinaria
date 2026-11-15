@@ -12,6 +12,12 @@ let listSequence = 0;
 let loadingDetail = false;
 let busy = false;
 
+function showSaveMessage(text) {
+  message.textContent = text;
+  const footerMessage = document.querySelector('#attendance-save-message');
+  if (footerMessage) footerMessage.textContent = text;
+}
+
 async function api(path, method = 'GET', body) {
   const headers = {};
   if (method !== 'GET') {
@@ -47,6 +53,26 @@ function updateControls() {
     row.justification.disabled = locked || currentMeeting?.status !== 'held';
     if (row.fileInput) row.fileInput.disabled = locked || row.select.disabled;
     for (const button of row.attachmentButtons ?? []) button.disabled = locked;
+    for (const button of row.pendingButtons ?? []) button.disabled = locked;
+  }
+}
+
+function renderPendingFiles(draft) {
+  draft.pendingList.replaceChildren();
+  draft.pendingButtons = [];
+  for (const file of draft.pendingFiles) {
+    const item = document.createElement('div'); item.className = 'attachment-item';
+    const label = document.createElement('span'); label.textContent = `${file.name} — aguardando salvar`;
+    const remove = document.createElement('button');
+    remove.type = 'button'; remove.textContent = 'Remover arquivo selecionado';
+    remove.disabled = busy || loadingDetail;
+    remove.addEventListener('click', () => {
+      if (busy || loadingDetail) return;
+      draft.pendingFiles = draft.pendingFiles.filter(candidate => candidate !== file);
+      draft.fileInput.value = '';
+      renderPendingFiles(draft);
+    });
+    draft.pendingButtons.push(remove); item.append(label, remove); draft.pendingList.append(item);
   }
 }
 
@@ -148,7 +174,7 @@ async function loadDetail(id) {
       block.className = 'record-justification';
       block.hidden = select.value !== 'absent';
       block.append(justification);
-      const draft = { pendingFiles: [], removedAttachments: new Set(), attachmentButtons: [] };
+      const draft = { pendingFiles: [], pendingButtons: [], removedAttachments: new Set(), attachmentButtons: [] };
       const files = document.createElement('div');
       files.className = 'attachment-list';
       for (const attachment of student.attachments ?? []) {
@@ -156,14 +182,17 @@ async function loadDetail(id) {
         item.className = 'attachment-item';
         const link = document.createElement('a');
         link.href = `/api/attachments/${attachment.id}/download`;
-        link.textContent = attachment.name;
+        link.textContent = `${attachment.name} — salvo`;
         const remove = document.createElement('button');
         remove.type = 'button'; remove.textContent = 'Remover anexo';
         remove.addEventListener('click', () => {
           if (busy || loadingDetail) return;
           if (draft.removedAttachments.has(attachment.id)) {
-            draft.removedAttachments.delete(attachment.id); remove.textContent = 'Remover anexo';
-          } else { draft.removedAttachments.add(attachment.id); remove.textContent = 'Desfazer remoção'; }
+            draft.removedAttachments.delete(attachment.id); remove.textContent = 'Remover anexo'; link.textContent = `${attachment.name} — salvo`;
+          } else {
+            draft.removedAttachments.add(attachment.id); remove.textContent = 'Desfazer remoção';
+            link.textContent = `${attachment.name} — será removido ao salvar`;
+          }
         });
         draft.attachmentButtons.push(remove);
         item.append(link, remove); files.append(item);
@@ -174,16 +203,21 @@ async function loadDetail(id) {
       input.setAttribute('aria-label', `Anexar atestado de ${student.name}`);
       const hint = document.createElement('p'); hint.className = 'attachment-hint';
       hint.textContent = 'PDF, JPG ou PNG, até 4 MB por arquivo. Os anexos serão enviados ao salvar a chamada.';
+      const pendingList = document.createElement('div'); pendingList.className = 'attachment-list';
+      pendingList.setAttribute('aria-live', 'polite');
       input.addEventListener('change', () => {
+        if (busy || loadingDetail) return;
         const selected = Array.from(input.files ?? []);
         if (selected.some(file => !file.size || file.size > 4194304 || !/\.(pdf|jpe?g|png)$/i.test(file.name))) {
-          message.textContent = 'Escolha PDF, JPG ou PNG de até 4 MB por arquivo.'; input.value = ''; return;
+          showSaveMessage('Escolha PDF, JPG ou PNG de até 4 MB por arquivo.'); input.value = ''; return;
         }
-        draft.pendingFiles = selected;
+        draft.pendingFiles.push(...selected);
+        input.value = '';
+        renderPendingFiles(draft);
       });
-      block.append(files, input, hint);
+      block.append(files, input, pendingList, hint);
       select.addEventListener('change', () => { block.hidden = select.value !== 'absent'; });
-      draftRows.push(Object.assign(draft, { fileInput: input, id: student.id, select, justification, originalStatus: student.status ?? null,
+      draftRows.push(Object.assign(draft, { pendingList, fileInput: input, id: student.id, select, justification, originalStatus: student.status ?? null,
         originalJustification: student.justification?.trim() || null }));
       row.append(name, controls, block);
       attendanceList.append(row);
@@ -196,9 +230,9 @@ async function loadDetail(id) {
 async function saveAttendance(complete) {
   if (busy || loadingDetail || !selectedId || currentMeeting?.status !== 'held') return;
   const records = recordsFromDraft();
-  if (!records.length) { message.textContent = 'Não há participantes nesta chamada.'; return; }
+  if (!records.length) { showSaveMessage('Não há participantes nesta chamada.'); return; }
   if ((complete || currentMeeting.attendanceCompleted) && records.some(record => record.status === null)) {
-    message.textContent = 'Marque Presente ou Falta para todos os participantes antes de fechar a chamada.';
+    showSaveMessage('Marque Presente ou Falta para todos os participantes antes de fechar a chamada.');
     return;
   }
   const removesJustification = records.some((record, index) => draftRows[index].originalJustification && record.justification === null);
@@ -214,6 +248,7 @@ async function saveAttendance(complete) {
   updateControls();
   let committed = false;
   let attachmentsSaved = false;
+  showSaveMessage('Salvando chamada e anexos. Aguarde a confirmação antes de sair.');
   try {
     const result = await api(`/${id}/attendance`, 'PUT', { records, complete, ...(complete ? { confirmed: true } : {}) });
     committed = true;
@@ -229,18 +264,18 @@ async function saveAttendance(complete) {
         await attachmentRequest(`/${attachmentId}`, 'DELETE'); row.removedAttachments.delete(attachmentId);
       }
       while (row.pendingFiles.length) {
-        await attachmentRequest(`/${id}/${row.id}`, 'POST', row.pendingFiles[0]); row.pendingFiles.shift();
+        await attachmentRequest(`/${id}/${row.id}`, 'POST', row.pendingFiles[0]); row.pendingFiles.shift(); renderPendingFiles(row);
       }
       row.fileInput.value = '';
     }
     attachmentsSaved = true;
     await loadMeetings();
     await loadDetail(id);
-    message.textContent = success;
+    showSaveMessage(success);
   } catch (error) {
-    message.textContent = committed ? attachmentsSaved
+    showSaveMessage(committed ? attachmentsSaved
       ? `${success} Não foi possível atualizar a tela; recarregue para conferir.`
-      : `${success} Há anexos pendentes: ${error.message} Tente salvar novamente antes de sair.` : error.message;
+      : `${success} Há anexos pendentes: ${error.message} Tente salvar novamente antes de sair.` : error.message);
   } finally { busy = false; updateControls(); }
 }
 
@@ -248,7 +283,11 @@ async function attachmentRequest(path, method, file) {
   const tokenResponse = await fetch('/api/auth/csrf');
   if (!tokenResponse.ok) throw new Error('Entre novamente.');
   const headers = { 'X-CSRF-Token': (await tokenResponse.json()).csrfToken };
-  if (file) { headers['Content-Type'] = file.type || 'application/octet-stream'; headers['X-File-Name'] = encodeURIComponent(file.name); }
+  if (file) {
+    const inferredType = /\.pdf$/i.test(file.name) ? 'application/pdf' : /\.png$/i.test(file.name) ? 'image/png' : 'image/jpeg';
+    headers['Content-Type'] = !file.type || file.type === 'application/octet-stream' ? inferredType : file.type;
+    headers['X-File-Name'] = encodeURIComponent(file.name);
+  }
   const response = await fetch(`/api/attachments${path}`, { method, headers, body: file });
   const data = await response.json();
   if (!response.ok) throw new Error(data.error || 'Não foi possível salvar o anexo.');

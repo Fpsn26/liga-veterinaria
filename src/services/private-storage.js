@@ -5,11 +5,14 @@ export function createPrivateStorage(env = process.env, request = fetch) {
   const key = env.SUPABASE_SERVICE_ROLE_KEY;
   let origin;
   try {
-    const url = new URL(env.SUPABASE_URL);
-    if (url.protocol === 'https:' && url.origin === env.SUPABASE_URL && !url.username && !url.password) origin = url.origin;
+    const url = new URL(env.SUPABASE_URL?.trim());
+    // The Dashboard may copy the Data API URL instead of the project origin.
+    if (url.protocol === 'https:' && ['/', '/rest/v1', '/rest/v1/'].includes(url.pathname)
+      && !url.username && !url.password && !url.search && !url.hash) origin = url.origin;
   } catch { /* Missing optional configuration is reported only when used. */ }
   async function call(path, options = {}) {
-    if (!origin || !key || !/^[a-z0-9][a-z0-9-]{0,62}$/.test(bucket)) throw new AttachmentError(503, 'Armazenamento de anexos não configurado.');
+    if (!origin) throw new AttachmentError(503, 'Confira SUPABASE_URL nas variáveis do servidor: use a URL HTTPS do projeto Supabase.');
+    if (!key || !/^[a-z0-9][a-z0-9-]{0,62}$/.test(bucket)) throw new AttachmentError(503, 'Armazenamento de anexos não configurado.');
     try {
       const response = await request(`${origin}/storage/v1/${path}`, { ...options, redirect: 'error', signal: AbortSignal.timeout(15000),
         // New secret keys are not JWTs: send them only as apikey.
